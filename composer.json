@@ -22,7 +22,13 @@
   "license": "MIT",
   "autoload": {
     "psr-4": {
-      "Flagship\\": "src/"
+      "Flagship\\": "src/",
+      "Flagship\\Factories\\": "database/factories/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Tests\\": "tests/"
     }
   },
   "extra": {
