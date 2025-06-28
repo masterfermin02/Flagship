@@ -1,0 +1,10 @@
+laravel: "@testbench"
+
+providers:
+  - Flagship\FlagshipServiceProvider
+
+migrations:
+  - database/migrations
+
+workbench:
+  install: true
