@@ -1,56 +1,58 @@
 {
-  "name": "phpdominicana/flagship",
-  "keywords": [
-    "laravel",
-    "flagship",
-    "feature",
-    "flags"
-  ],
-  "description": "Feature flags for Laravel in a super simple and fast way",
-  "type": "library",
-  "require": {
-    "php": "^8.1",
-    "illuminate/support": "^9.0|^10.0|^11.0|^12.0",
-    "illuminate/database": "^9.0|^10.0|^11.0|^12.0",
-    "illuminate/console": "^9.0|^10.0|^11.0|^12.0"
-  },
-  "require-dev": {
-    "orchestra/testbench": "^10.4",
-    "pestphp/pest": "^3.8",
-    "pestphp/pest-plugin-laravel": "^3.2"
-  },
-  "license": "MIT",
-  "autoload": {
-    "psr-4": {
-      "Flagship\\": "src/",
-      "Flagship\\Factories\\": "database/factories/"
+    "name": "phpdominicana/flagship",
+    "keywords": [
+        "laravel",
+        "flagship",
+        "feature",
+        "flags"
+    ],
+    "description": "Feature flags for Laravel in a super simple and fast way",
+    "type": "library",
+    "require": {
+        "php": "^8.1",
+        "illuminate/support": "^9.0|^10.0|^11.0|^12.0",
+        "illuminate/database": "^9.0|^10.0|^11.0|^12.0",
+        "illuminate/console": "^9.0|^10.0|^11.0|^12.0"
+    },
+    "require-dev": {
+        "orchestra/testbench": "^10.4",
+        "pestphp/pest": "^3.8",
+        "pestphp/pest-plugin-laravel": "^3.2"
+    },
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "Flagship\\": "src/",
+            "Flagship\\Factories\\": "database/factories/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Tests\\": "tests/",
+            "Workbench\\App\\": "workbench/app/",
+            "Workbench\\Database\\Factories\\": "workbench/database/factories/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Flagship\\FlagshipServiceProvider"
+            ],
+            "aliases": {
+                "Flagship": "Flagship\\Facades\\Flagship"
+            }
+        }
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true,
+    "config": {
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
+        }
+    },
+    "scripts": {
+        "test": "./vendor/bin/pest",
+        "post-autoload-dump": "@prepare",
+        "prepare": "@php vendor/bin/testbench package:discover --ansi"
     }
-  },
-  "autoload-dev": {
-    "psr-4": {
-      "Tests\\": "tests/"
-    }
-  },
-  "extra": {
-    "laravel": {
-      "providers": [
-        "Flagship\\FlagshipServiceProvider"
-      ],
-      "aliases": {
-        "Flagship": "Flagship\\Facades\\Flagship"
-      }
-    }
-  },
-  "minimum-stability": "stable",
-  "prefer-stable": true,
-  "config": {
-    "allow-plugins": {
-      "pestphp/pest-plugin": true
-    }
-  },
-  "scripts": {
-    "test": "./vendor/bin/pest",
-    "post-autoload-dump": "@prepare",
-    "prepare": "@php vendor/bin/testbench package:discover --ansi"
-  }
 }
