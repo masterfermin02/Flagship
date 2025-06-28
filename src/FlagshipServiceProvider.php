@@ -2,6 +2,7 @@
 
 namespace Flagship;
 
+use Flagship\Blade\FlagshipDirective;
 use Flagship\Commands\FlagshipMakeCommand;
 use Flagship\Commands\FlagshipListCommand;
 use Flagship\Commands\FlagshipToggleCommand;
@@ -25,6 +26,8 @@ class FlagshipServiceProvider extends ServiceProvider
 
         $this->app->singleton(FlagshipInterface::class, FlagshipService::class);
         $this->app->alias(FlagshipInterface::class, 'flagship');
+
+        FlagshipDirective::register();
     }
 
     /**

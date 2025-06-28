@@ -8,3 +8,10 @@ migrations:
 
 workbench:
   install: true
+  discovers:
+    web: false
+    api: false
+    commands: true
+    components: false
+    factories: true
+    views: true
