@@ -27,6 +27,7 @@
         <env name="QUEUE_CONNECTION" value="sync"/>
         <env name="SESSION_DRIVER" value="array"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
+        <env name="CONFIG_CACHE" value="false"/>
 
         <!-- Flagship Specific -->
         <env name="FLAGSHIP_CACHE_ENABLED" value="false"/>
