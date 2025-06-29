@@ -2,8 +2,10 @@
 
 namespace Flagship\Services;
 
+use Carbon\Carbon;
 use Flagship\Contracts\FlagshipInterface;
 use Flagship\Models\FeatureFlag;
+use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Cache;
 
 class FlagshipService implements FlagshipInterface
@@ -24,7 +26,24 @@ class FlagshipService implements FlagshipInterface
             return config('flagship.default_state', false);
         }
 
+        if (is_array($featureFlag->environments)) {
+            $env = App::environment();
+            if (isset($featureFlag->environments[$env]) && $featureFlag->environments[$env] === false) {
+                return false;
+            }
+        }
+
         if (!$featureFlag->is_active) {
+            return false;
+        }
+
+        $now = Carbon::now();
+
+        if ($featureFlag->scheduled_start && $now->lt($featureFlag->scheduled_start)) {
+            return false;
+        }
+
+        if ($featureFlag->scheduled_end && $now->gt($featureFlag->scheduled_end)) {
             return false;
         }
 
@@ -93,6 +112,34 @@ class FlagshipService implements FlagshipInterface
     public function all(): array
     {
         return FeatureFlag::all()->toArray();
+    }
+
+    public function getVariant(string $featureName, $user)
+    {
+        $feature = FeatureFlag::where('name', $featureName)->first();
+
+        if (! $feature || !is_array($feature->variants)) {
+            return null;
+        }
+
+        $userId = is_object($user) ? $user->id : (string) $user;
+
+        // Deterministic hash (e.g. crc32 or md5)
+        $hash = crc32($featureName . $userId); // Stable for same inputs
+        $percentage = $hash % 100; // Get a value between 0-99
+
+        $cumulative = 0;
+
+        foreach ($feature->variants as $name => $data) {
+            $weight = $data['weight'] ?? 0;
+            $cumulative += $weight;
+
+            if ($percentage < $cumulative) {
+                return $name;
+            }
+        }
+
+        return null;
     }
 
     // WIP: evaluate rules
