@@ -4,12 +4,39 @@ namespace Flagship\Services;
 
 use Carbon\Carbon;
 use Flagship\Contracts\FlagshipInterface;
+use Flagship\Contracts\TrackAbleUser;
+use Flagship\Models\FeatureEvent;
 use Flagship\Models\FeatureFlag;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Contracts\Container\Container;
 
 class FlagshipService implements FlagshipInterface
 {
+    protected $evaluator;
+    public function __construct(public readonly Container $container)
+    {
+        $this->evaluator = $this->resolveEvaluator(config('flagship.evaluator'));
+    }
+
+    protected function resolveEvaluator(mixed $config): callable
+    {
+        if (is_callable($config)) {
+            return $config;
+        }
+
+        if (is_string($config) && class_exists($config)) {
+            $resolved = $this->container->make($config);
+
+            if (is_callable($resolved)) {
+                return $resolved;
+            }
+        }
+
+        // Fallback: always return true
+        return fn(array $rules, $user) => true;
+    }
+
     public function isEnabled(string $flag, $user = null): bool
     {
         $cacheKey = "flagship.{$flag}";
@@ -48,11 +75,15 @@ class FlagshipService implements FlagshipInterface
         }
 
         if ($featureFlag->rules && $user) {
-            // WIP: evaluate rules
-            // return $this->evaluateRules($featureFlag->rules, $user);
+            return $this->evaluateRules($featureFlag->rules, $user);
         }
 
         return true;
+    }
+
+    private function evaluateRules(array $rules, $user): bool
+    {
+        return call_user_func($this->evaluator, $rules, $user);
     }
 
     public function enable(string $flag): void
@@ -142,10 +173,15 @@ class FlagshipService implements FlagshipInterface
         return null;
     }
 
-    // WIP: evaluate rules
-    // private function evaluateRules(string $rules, $user): bool
-    // {
-    // }
+    public static function track(string $featureName, TrackAbleUser $user, string $eventType, array $metadata = []): void
+    {
+        FeatureEvent::create([
+            'feature_name' => $featureName,
+            'user_id' => $user->getId(),
+            'event_type' => $eventType,
+            'metadata' => $metadata,
+        ]);
+    }
 
     private function clearCache(string $flag): void
     {
