@@ -170,3 +170,38 @@ it('enables or disables features based on environment staging', function () {
     // Not explicitly set, should fallback to enabled
     expect(Flagship::isEnabled('debug-toolbar'))->toBeTrue();
 });
+
+it('tracks a feature impression', function () {
+    $user = User::factory()->create();
+
+    Flagship::track('new-checkout', $user, 'viewed');
+
+    $this->assertDatabaseHas('feature_events', [
+        'feature_name' => 'new-checkout',
+        'user_id' => $user->id,
+        'event_type' => 'viewed',
+    ]);
+});
+
+it('tracks a feature interaction with metadata', function () {
+    $user = User::factory()->create();
+
+    Flagship::track('new-checkout', $user, 'completed_purchase', [
+        'amount' => 99.99,
+        'items' => 3
+    ]);
+
+    $this->assertDatabaseHas('feature_events', [
+        'feature_name' => 'new-checkout',
+        'user_id' => $user->id,
+        'event_type' => 'completed_purchase',
+    ]);
+
+    $this->assertDatabaseCount('feature_events', 1);
+
+    $event = \Illuminate\Support\Facades\DB::table('feature_events')->first();
+    expect(json_decode($event->metadata, true))->toMatchArray([
+        'amount' => 99.99,
+        'items' => 3
+    ]);
+});

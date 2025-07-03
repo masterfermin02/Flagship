@@ -4,6 +4,8 @@ namespace Flagship\Services;
 
 use Carbon\Carbon;
 use Flagship\Contracts\FlagshipInterface;
+use Flagship\Contracts\TrackAbleUser;
+use Flagship\Models\FeatureEvent;
 use Flagship\Models\FeatureFlag;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Cache;
@@ -140,6 +142,16 @@ class FlagshipService implements FlagshipInterface
         }
 
         return null;
+    }
+
+    public static function track(string $featureName, TrackAbleUser $user, string $eventType, array $metadata = []): void
+    {
+        FeatureEvent::create([
+            'feature_name' => $featureName,
+            'user_id' => $user->getId(),
+            'event_type' => $eventType,
+            'metadata' => $metadata,
+        ]);
     }
 
     // WIP: evaluate rules
