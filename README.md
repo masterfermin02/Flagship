@@ -54,6 +54,27 @@ if (Flagship::isEnabled('beta_feature', auth()->user())) {
 }
 ```
 
+## Basic Usage
+
+### Checking Feature Flags
+
+```php
+use PhpDominicana\Flagship\Facades\Flagship;
+
+// Simple feature check
+if (Flagship::isEnabled('new-checkout')) {
+    // Show new checkout flow
+}
+
+// User-specific feature check
+if (Flagship::isEnabledForUser('beta-dashboard', $user)) {
+    // Show beta dashboard to specific user
+}
+
+// Check with fallback
+$showFeature = Flagship::isEnabled('experimental-ui', false);
+```
+
 ---
 
 ## 🖌 Blade directives
@@ -62,6 +83,26 @@ if (Flagship::isEnabled('beta_feature', auth()->user())) {
 @flagship('new_feature')
     <div>New feature enabled!</div>
 @endflagship
+```
+
+or
+
+```blade
+@feature('new-design')
+    <div class="new-ui">
+        <!-- New design content -->
+    </div>
+@else
+    <div class="legacy-ui">
+        <!-- Legacy design content -->
+    </div>
+@endfeature
+
+@featureForUser('premium-features', $user)
+    <div class="premium-content">
+        <!-- Premium features -->
+    </div>
+@endfeature
 ```
 
 ---
@@ -74,6 +115,170 @@ Protect routes or route groups:
 Route::middleware(['flagship:new_feature'])->group(function () {
     Route::get('/new-section', [Controller::class, 'newSection']);
 });
+
+Route::middleware(['feature:new-api'])->group(function () {
+    Route::get('/api/v2/users', [UserController::class, 'index']);
+});
+
+// With user context
+Route::middleware(['feature:beta-features,user'])->group(function () {
+    Route::get('/beta/dashboard', [BetaController::class, 'dashboard']);
+});
+```
+
+## Feature Configuration
+
+### Creating Features
+
+```php
+use PhpDominicana\Flagship\Models\Feature;
+
+// Create a new feature
+Feature::create([
+    'name' => 'new-checkout',
+    'description' => 'New streamlined checkout process',
+    'is_active' => true,
+    'rollout_percentage' => 25, // 25% of users
+]);
+```
+
+### Feature Targeting
+
+Target specific user segments:
+
+```php
+// Target by user attributes
+$feature = Feature::create([
+    'name' => 'premium-features',
+    'targeting_rules' => [
+        'user_type' => 'premium',
+        'registration_date' => ['after' => '2024-01-01']
+    ]
+]);
+
+// Target by custom logic
+$feature = Feature::create([
+    'name' => 'beta-ui',
+    'targeting_strategy' => 'custom',
+    'custom_evaluator' => BetaUserEvaluator::class
+]);
+```
+
+## Advanced Features
+
+### A/B Testing
+
+Create feature variants for A/B testing:
+
+```php
+$feature = Feature::create([
+    'name' => 'checkout-flow',
+    'variants' => [
+        'control' => ['weight' => 50],
+        'variant_a' => ['weight' => 25],
+        'variant_b' => ['weight' => 25]
+    ]
+]);
+
+// In your code
+$variant = Flagship::getVariant('checkout-flow', $user);
+switch ($variant) {
+    case 'variant_a':
+        return view('checkout.variant-a');
+    case 'variant_b':
+        return view('checkout.variant-b');
+    default:
+        return view('checkout.control');
+}
+```
+
+### Scheduled Features
+
+Automatically enable/disable features based on schedule:
+
+```php
+Feature::create([
+    'name' => 'black-friday-sale',
+    'scheduled_start' => '2024-11-29 00:00:00',
+    'scheduled_end' => '2024-12-02 23:59:59',
+]);
+```
+
+### Environment-based Features
+
+Different feature states per environment:
+
+```php
+Feature::create([
+    'name' => 'debug-toolbar',
+    'environments' => [
+        'local' => true,
+        'staging' => true,
+        'production' => false
+    ]
+]);
+```
+
+## Analytics & Monitoring
+
+### Feature Usage Tracking
+
+```php
+// Track feature impressions
+Flagship::track('new-checkout', $user, 'viewed');
+
+// Track feature interactions
+Flagship::track('new-checkout', $user, 'completed_purchase', [
+    'amount' => 99.99,
+    'items' => 3
+]);
+```
+
+### Metrics Dashboard
+
+Access built-in analytics:
+
+```php
+// Get feature adoption rates
+$stats = Flagship::getFeatureStats('new-checkout');
+// Returns: ['impressions' => 1000, 'interactions' => 150, 'conversion_rate' => 15%]
+
+// A/B test results
+$results = Flagship::getABTestResults('checkout-flow');
+```
+
+## Management Interface
+
+### Artisan Commands
+
+```bash
+# List all features
+php artisan flagship:list
+
+# Enable a feature
+php artisan flagship:enable new-checkout
+
+
+# Disable a feature
+php artisan flagship:disable new-checkout
+
+# Set rollout percentage
+php artisan flagship:rollout new-checkout --percentage=50
+
+
+# Cleanup inactive features
+php artisan flagship:cleanup
+```
+
+### API Endpoints
+
+Built-in REST API for external management:
+
+```http
+GET /api/flagship/features
+POST /api/flagship/features
+PUT /api/flagship/features/{feature}
+DELETE /api/flagship/features/{feature}
 ```
 
 ---

@@ -60,5 +60,27 @@ class FlagshipServiceProvider extends ServiceProvider
                 FlagshipToggleCommand::class,
             ]);
         }
+
+        // Register API routes
+        $this->registerApiRoutes();
+    }
+
+    /**
+     * Register the package's API routes.
+     *
+     * @return void
+     */
+    protected function registerApiRoutes()
+    {
+        $this->app['router']->group([
+            'prefix' => 'api/flagship',
+            'middleware' => ['api'],
+            'namespace' => 'Flagship\Http\Controllers',
+        ], function ($router) {
+            $router->get('features', 'FlagshipApiController@index');
+            $router->post('features', 'FlagshipApiController@store');
+            $router->put('features/{feature}', 'FlagshipApiController@update');
+            $router->delete('features/{feature}', 'FlagshipApiController@destroy');
+        });
     }
 }
