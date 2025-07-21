@@ -173,11 +173,25 @@ class FlagshipService implements FlagshipInterface
         return null;
     }
 
-    public static function track(string $featureName, TrackAbleUser $user, string $eventType, array $metadata = []): void
+    public function track(string $featureName, $user, string $eventType, array $metadata = []): void
     {
+        $userId = null;
+
+        if ($user instanceof TrackAbleUser) {
+            $userId = $user->getId();
+        } elseif (is_object($user) && method_exists($user, 'getKey')) {
+            $userId = $user->getKey();
+        } elseif (is_object($user) && isset($user->id)) {
+            $userId = $user->id;
+        } elseif (is_array($user) && isset($user['id'])) {
+            $userId = $user['id'];
+        } elseif (is_numeric($user) || is_string($user)) {
+            $userId = $user;
+        }
+
         FeatureEvent::create([
             'feature_name' => $featureName,
-            'user_id' => $user->getId(),
+            'user_id' => $userId,
             'event_type' => $eventType,
             'metadata' => $metadata,
         ]);
@@ -188,5 +202,102 @@ class FlagshipService implements FlagshipInterface
         if (config('flagship.cache_enabled', true)) {
             Cache::forget("flagship.{$flag}");
         }
+    }
+
+    public function getFeatureStats(string $featureName): array
+    {
+        // Count impressions (viewed events)
+        $impressions = FeatureEvent::where('feature_name', $featureName)
+            ->where('event_type', 'viewed')
+            ->count();
+
+        // Count interactions (all events except viewed)
+        $interactions = FeatureEvent::where('feature_name', $featureName)
+            ->where('event_type', '!=', 'viewed')
+            ->count();
+
+        // Calculate conversion rate
+        $conversionRate = $impressions > 0 ? round(($interactions / $impressions) * 100, 2) : 0;
+
+        return [
+            'impressions' => $impressions,
+            'interactions' => $interactions,
+            'conversion_rate' => $conversionRate . '%'
+        ];
+    }
+
+    public function getABTestResults(string $testName): array
+    {
+        // Get the feature flag to check if it has variants
+        $featureFlag = FeatureFlag::where('name', $testName)->first();
+
+        if (!$featureFlag || !is_array($featureFlag->variants) || empty($featureFlag->variants)) {
+            return ['error' => 'No A/B test found with this name or no variants defined'];
+        }
+
+        $results = [];
+        $variantNames = array_keys($featureFlag->variants);
+
+        // Initialize results for each variant
+        foreach ($variantNames as $variant) {
+            $results[$variant] = [
+                'impressions' => 0,
+                'interactions' => 0,
+                'conversion_rate' => '0%'
+            ];
+        }
+
+        // Get all events for this test
+        $events = FeatureEvent::where('feature_name', $testName)->get();
+
+        // Group events by user
+        $userEvents = [];
+        foreach ($events as $event) {
+            if (!isset($userEvents[$event->user_id])) {
+                $userEvents[$event->user_id] = [];
+            }
+            $userEvents[$event->user_id][] = $event;
+        }
+
+        // Process events by user
+        foreach ($userEvents as $userId => $userEventList) {
+            // Determine which variant this user saw
+            $variant = $this->getVariant($testName, $userId);
+
+            // If no variant determined, skip this user
+            if (!$variant || !in_array($variant, $variantNames)) {
+                continue;
+            }
+
+            // Count impressions and interactions for this user
+            $hasImpression = false;
+            $hasInteraction = false;
+
+            foreach ($userEventList as $event) {
+                if ($event->event_type === 'viewed') {
+                    $hasImpression = true;
+                } else {
+                    $hasInteraction = true;
+                }
+            }
+
+            if ($hasImpression) {
+                $results[$variant]['impressions']++;
+            }
+
+            if ($hasInteraction) {
+                $results[$variant]['interactions']++;
+            }
+        }
+
+        // Calculate conversion rates
+        foreach ($results as $variant => $stats) {
+            if ($stats['impressions'] > 0) {
+                $conversionRate = round(($stats['interactions'] / $stats['impressions']) * 100, 2);
+                $results[$variant]['conversion_rate'] = $conversionRate . '%';
+            }
+        }
+
+        return $results;
     }
 }
