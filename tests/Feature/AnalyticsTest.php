@@ -29,6 +29,21 @@ beforeEach(function () {
     ]);
 });
 
+// Helper function to create a TrackAbleUser with a specific ID
+function createTrackableUser($id) {
+    return new class($id) implements TrackAbleUser {
+        private $id;
+
+        public function __construct($id) {
+            $this->id = $id;
+        }
+
+        public function getId(): mixed {
+            return $this->id;
+        }
+    };
+}
+
 it('can get feature stats', function () {
     // Arrange
     $service = app(FlagshipService::class);
@@ -36,12 +51,12 @@ it('can get feature stats', function () {
     // Create test users
     $users = [];
     for ($i = 1; $i <= 10; $i++) {
-        $users[] = $i;
+        $users[] = createTrackableUser($i);
     }
 
     // Track impressions for all users
-    foreach ($users as $userId) {
-        $service->track('new-checkout', $userId, 'viewed');
+    foreach ($users as $user) {
+        $service->track('new-checkout', $user, 'viewed');
     }
 
     // Track interactions for some users
@@ -68,11 +83,11 @@ it('can get feature stats via facade', function () {
     // Arrange
     // Create test users and track events
     for ($i = 1; $i <= 5; $i++) {
-        Flagship::track('new-checkout', $i, 'viewed');
+        Flagship::track('new-checkout', createTrackableUser($i), 'viewed');
     }
 
     for ($i = 1; $i <= 2; $i++) {
-        Flagship::track('new-checkout', $i, 'clicked');
+        Flagship::track('new-checkout', createTrackableUser($i), 'clicked');
     }
 
     // Act
@@ -119,18 +134,18 @@ it('can get A/B test results', function () {
     // Create test events
     // Control group: 5 users, all view, 2 interact
     for ($i = 1; $i <= 5; $i++) {
-        $service->track('checkout-flow', $i, 'viewed');
+        $service->track('checkout-flow', createTrackableUser($i), 'viewed');
     }
     for ($i = 1; $i <= 2; $i++) {
-        $service->track('checkout-flow', $i, 'clicked');
+        $service->track('checkout-flow', createTrackableUser($i), 'clicked');
     }
 
     // Variant A: 5 users, all view, 3 interact
     for ($i = 6; $i <= 10; $i++) {
-        $service->track('checkout-flow', $i, 'viewed');
+        $service->track('checkout-flow', createTrackableUser($i), 'viewed');
     }
     for ($i = 6; $i <= 8; $i++) {
-        $service->track('checkout-flow', $i, 'clicked');
+        $service->track('checkout-flow', createTrackableUser($i), 'clicked');
     }
 
     // Act
@@ -167,16 +182,16 @@ it('can get A/B test results via facade', function () {
     // Create test events
     // Control group: 3 users
     for ($i = 1; $i <= 3; $i++) {
-        Flagship::track('checkout-flow', $i, 'viewed');
+        Flagship::track('checkout-flow', createTrackableUser($i), 'viewed');
     }
-    Flagship::track('checkout-flow', 1, 'clicked');
+    Flagship::track('checkout-flow', createTrackableUser(1), 'clicked');
 
     // Variant A: 3 users
     for ($i = 4; $i <= 6; $i++) {
-        Flagship::track('checkout-flow', $i, 'viewed');
+        Flagship::track('checkout-flow', createTrackableUser($i), 'viewed');
     }
-    Flagship::track('checkout-flow', 4, 'clicked');
-    Flagship::track('checkout-flow', 5, 'clicked');
+    Flagship::track('checkout-flow', createTrackableUser(4), 'clicked');
+    Flagship::track('checkout-flow', createTrackableUser(5), 'clicked');
 
     // Act
     $results = Flagship::getABTestResults('checkout-flow');

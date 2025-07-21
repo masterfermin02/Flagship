@@ -173,21 +173,9 @@ class FlagshipService implements FlagshipInterface
         return null;
     }
 
-    public function track(string $featureName, $user, string $eventType, array $metadata = []): void
+    public function track(string $featureName,TrackAbleUser $user, string $eventType, array $metadata = []): void
     {
-        $userId = null;
-
-        if ($user instanceof TrackAbleUser) {
-            $userId = $user->getId();
-        } elseif (is_object($user) && method_exists($user, 'getKey')) {
-            $userId = $user->getKey();
-        } elseif (is_object($user) && isset($user->id)) {
-            $userId = $user->id;
-        } elseif (is_array($user) && isset($user['id'])) {
-            $userId = $user['id'];
-        } elseif (is_numeric($user) || is_string($user)) {
-            $userId = $user;
-        }
+        $userId = $user->getId();
 
         FeatureEvent::create([
             'feature_name' => $featureName,
