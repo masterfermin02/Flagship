@@ -281,6 +281,8 @@ PUT /api/flagship/features/{feature}
 DELETE /api/flagship/features/{feature}
 ```
 
+You can configure additional middleware for these API endpoints in your config file (see [Flexible configuration](#-flexible-configuration)).
+
 ---
 
 ## 🛠 Artisan commands
@@ -316,6 +318,11 @@ return [
     'cache_enabled' => true,
     'cache_ttl' => 3600,
     'default_state' => false,
+    
+    // Configure additional middleware for API endpoints
+    'api' => [
+        'middleware' => ['auth:sanctum'], // Example: Add authentication middleware
+    ],
 ];
 ```
 

@@ -28,4 +28,18 @@ return [
     |
     */
     'evaluator' => null,
+
+    /*
+    |--------------------------------------------------------------------------
+    | API Settings
+    |--------------------------------------------------------------------------
+    |
+    | Configure the API endpoints for feature flags management.
+    | - middleware: Additional middleware to apply to the API endpoints.
+    |   This will be merged with the default ['api'] middleware.
+    |
+    */
+    'api' => [
+        'middleware' => [],
+    ],
 ];

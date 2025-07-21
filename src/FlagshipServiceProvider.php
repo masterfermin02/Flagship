@@ -72,9 +72,12 @@ class FlagshipServiceProvider extends ServiceProvider
      */
     protected function registerApiRoutes()
     {
+        // Get middleware from config and merge with default 'api' middleware
+        $middleware = array_merge(['api'], config('flagship.api.middleware', []));
+
         $this->app['router']->group([
             'prefix' => 'api/flagship',
-            'middleware' => ['api'],
+            'middleware' => $middleware,
             'namespace' => 'Flagship\Http\Controllers',
         ], function ($router) {
             $router->get('features', 'FlagshipApiController@index');
